@@ -29,8 +29,9 @@
     };
 
     //创建占位
-    var createPlaceholder = function () {
-
+    var createPlaceholder = function ($el) {
+        var height = $el.height();
+        $el.wrap('<div style="position:relative;height:' + height + 'px"></div>')
     };
 
     var initConf = function (conf) {
@@ -47,22 +48,43 @@
         return conf;
     };
 
+    $(window).on('scroll', function () {
+        var $this = $(this);
+        var scrollTop = $this.scrollTop();
+        stickyQueue.forEach(function (v, i) {
+            if (v.compute) {
+                v.scrollTop = v.el.offset().top;
+            }
+            if (v.scrollTop + v.offsetTop >= scrollTop) {
+                v.el.css({
+                    position: 'fixed',
+                    top: v.top
+                })
+            } else {
+                v.el.css({
+                    position: 'static',
+                    top: '0'
+                })
+            }
+        })
+    });
+
     /**
      *
-     * @param conf
-     *                  {                     {Object|Array}
+     * @param conf     {Object|Array}
+     *                  {
      *                      el                 $对象，not empty
      *                      top                默认:0。固定位置距离顶部的距离
      *                      offsetTop          默认:0（top值）。距离顶部多少时开启固定定位。与top保持一致才不会出现 ‘闪一下’的情况
      *                      compute            默认:false。是否实时计算高度。比如ajax填充数据后，导致sticky出现时机改变，开启过后能避免这个问题。注意：实时计算会影响性能
      *                      zIndex             默认:1001。当遇到丧心病狂的设置得非常高的z-index时，不要犹豫，超过他！
      *                  }
-     * @param timer    //触发的间隔时间
+     * @param timer    {Number}               默认值：200。触发的间隔时间 ，后面的会覆盖
      */
     var sticky = function (conf, timer) {
         throttleTime = setDefaultVal(timer, 200);
-        var stickyConf;
 
+        var stickyConf;
         if (isArray(conf)) {
             for (var i = 0, l = conf.length; i < l; i++) {
                 stickyConf = initConf(conf[i]);
