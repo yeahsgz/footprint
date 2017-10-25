@@ -5,8 +5,21 @@
  * @lastEditTime 2017-09-15
  * @desc
  */
-(function (global) {
+ (function (global) {
         var throttleTime = 200, stickyQueue = [];
+
+        var throttle = function (fn, timer) {
+            timer = timer || 0;
+            var waiting;
+            return function () {
+                if (!waiting) {
+                    waiting = setTimeout(function () {
+                        waiting = null;
+                        typeof fn === 'function' && fn();
+                    }, timer)
+                }
+            }
+        };
 
         var setDefaultVal = function (val, defaultVal) {
             return isExist(val) ? val : defaultVal;
@@ -45,21 +58,21 @@
             conf.fixedTop = setDefaultVal(conf.fixedTop, conf.top);
             conf.compute = setDefaultVal(conf.compute, false);
             conf.zIndex = setDefaultVal(conf.zIndex, 1001);
-            conf.scrollTop = setDefaultVal(conf.el.offset().top, 0);
+            conf.offsetTop = setDefaultVal(conf.el.offset().top, 0);
 
             createPlaceholder(conf.el);
 
             return conf;
         };
 
-        $(window).on('scroll', function () {
+        $(window).on('scroll', throttle(function () {
             var $this = $(this);
             var scrollTop = $this.scrollTop();
             stickyQueue.forEach(function (v, i) {
                 if (v.compute) {
-                    v.scrollTop = v.el.offset().top;
+                    v.offsetTop = v.el.offset().top;
                 }
-                if (scrollTop > v.scrollTop - v.fixedTop) {
+                if (scrollTop > v.offsetTop - v.fixedTop) {
                     v.el.css({
                         position: 'fixed',
                         top: v.top,
@@ -72,7 +85,7 @@
                     })
                 }
             })
-        });
+        }, throttleTime));
 
         /**
          *
